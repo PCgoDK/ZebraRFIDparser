@@ -1,0 +1,59 @@
+{
+  "log_level": "INFO",
+  "gui": {
+    "enabled": true,
+    "host": "127.0.0.1",
+    "port": 8088
+  },
+  "input": {
+    "protocol": "llrp_client",
+    "host": "0.0.0.0",
+    "port": 9002,
+    "reader_host": "192.168.1.100",
+    "reader_port": 5084,
+    "reader_id": "fx7500",
+    "reconnect_delay_seconds": 2.0,
+    "socket_timeout_seconds": 5.0
+  },
+  "parser_setup": {
+    "default_event_type": "scan",
+    "required_tag_field": "tag_id",
+    "allow_plain_tag_id": true,
+    "key_aliases": {
+      "epc": "tag_id",
+      "reader": "reader_id",
+      "antenna_index": "antenna",
+      "signal_strength": "rssi",
+      "timestamp": "event_time"
+    }
+  },
+  "storage": {
+    "type": "sqlite",
+    "database_path": "/var/lib/rfid-event-collector/rfid_events.db",
+    "schema_path": "/opt/rfid-event-collector/sql/schema.sql",
+    "connection_string": "",
+    "server": "localhost,1433",
+    "database": "RFIDEvents",
+    "username": "sa",
+    "password": "",
+    "driver": "ODBC Driver 18 for SQL Server",
+    "trusted_connection": false,
+    "table_name": "rfid_events",
+    "connect_timeout_seconds": 5,
+    "create_table_if_missing": true,
+    "endpoint_url": "https://example.local/rfid/events",
+    "timeout_seconds": 5.0,
+    "method": "POST",
+    "headers": {
+      "X-Source": "rfid-event-collector"
+    },
+    "bearer_token": "",
+    "payload_key": "event"
+  },
+  "duplicate_filter": {
+    "enabled": true,
+    "window_seconds": 2.0,
+    "key_fields": ["tag_id", "reader_id", "antenna"],
+    "metrics_log_interval_seconds": 30.0
+  }
+}
