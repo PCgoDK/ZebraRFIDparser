@@ -157,16 +157,16 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 </div>
 <div id="csv-picker" class="picker-modal" style="display:none;">
 <div class="picker-card picker">
-<div class="subtle">Vaelg mappe paa serveren. Filnavnet saettes automatisk til <code>data.csv</code>.</div>
+<div class="subtle">Vaelg mappe paa serveren. Filnavnet saettes automatisk til <code>rfid_events.csv</code>.</div>
 <label>Aktuel mappe</label>
 <input id="csv-picker-current" readonly/>
 <label>Undermapper</label>
-<select id="csv-picker-list" size="8"></select>
+<select id="csv-picker-list" size="8" ondblclick="csvPickerInto()"></select>
 <div id="csv-picker-status" class="picker-status"></div>
 <div class="picker-actions">
 <button type="button" onclick="csvPickerDocuments()">Dokumenter</button>
 <button type="button" onclick="csvPickerUp()">Op</button>
-<button type="button" onclick="csvPickerInto()">Gaa ind</button>
+<button type="button" onclick="csvPickerInto()">Ned</button>
 <button type="button" onclick="applyCsvFolder()">Brug mappe</button>
 <button type="button" class="secondary" onclick="closeCsvFolderPicker()">Luk</button>
 </div>
@@ -367,7 +367,7 @@ async function csvPickerInto() {{
 
 function applyCsvFolder() {{
     const csvInput = document.getElementById('csv-path');
-    csvInput.value = csvJoin(csvPickerState.current, 'data.csv');
+    csvInput.value = csvJoin(csvPickerState.current, 'rfid_events.csv');
     closeCsvFolderPicker();
 }}
 
