@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from csv_adapter import CSVAdapter
 from rest_api_adapter import RESTAPIAdapter
 from sqlserver_adapter import SQLServerAdapter
 from storage_factory import create_storage_adapter
@@ -22,6 +23,17 @@ def test_create_sqlite_adapter_custom_config() -> None:
     assert isinstance(adapter, SQLiteAdapter)
     assert adapter.database_path == "./tmp/custom.db"
     assert adapter.schema_path == "./sql/schema.sql"
+
+
+def test_create_csv_adapter_custom_config() -> None:
+    adapter = create_storage_adapter(
+        {
+            "type": "csv",
+            "csv_path": "./tmp/events.csv",
+        }
+    )
+    assert isinstance(adapter, CSVAdapter)
+    assert adapter.file_path == "./tmp/events.csv"
 
 
 def test_future_backends_not_implemented() -> None:

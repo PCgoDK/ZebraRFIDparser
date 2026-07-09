@@ -41,13 +41,13 @@ def _get_key_fields(raw: Any) -> Iterable[str]:
 def main() -> None:
     default_config = Path(__file__).resolve().parents[1] / "config" / "config.json"
 
-    parser = argparse.ArgumentParser(description="RFID Event Collector")
+    parser = argparse.ArgumentParser(description="Zebra RFID Parser")
     parser.add_argument("--config", default=str(default_config), help="Path to config file")
     args = parser.parse_args()
 
     config = _load_config(args.config)
     _setup_logging(str(config.get("log_level", "INFO")))
-    logger = logging.getLogger("rfid_event_collector")
+    logger = logging.getLogger("zebra_rfid_parser")
     status_tracker = StatusTracker()
 
     def _status_callback(
@@ -164,7 +164,7 @@ def main() -> None:
         if gui_service is not None:
             gui_service.shutdown()
         storage_adapter.close()
-        logger.info("RFID Event Collector stopped")
+        logger.info("Zebra RFID Parser stopped")
 
 
 if __name__ == "__main__":

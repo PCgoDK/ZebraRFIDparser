@@ -1,0 +1,15 @@
+[Unit]
+Description=Zebra RFID Parser Receiver
+After=network.target
+
+[Service]
+Type=simple
+User=rfidcollector
+Group=rfidcollector
+WorkingDirectory=/opt/zebra-rfid-parser
+ExecStart=/opt/zebra-rfid-parser/venv/bin/python /opt/zebra-rfid-parser/src/main.py --config /etc/zebra-rfid-parser/config.json
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

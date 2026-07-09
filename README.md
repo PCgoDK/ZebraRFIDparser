@@ -1,6 +1,6 @@
-# RFID Event Collector
+# Zebra RFID Parser
 
-RFID Event Collector is a Python 3 receiver service that ingests RFID events (text TCP or LLRP) and stores them via a storage adapter interface.
+Zebra RFID Parser is a Python 3 receiver service that ingests RFID events (text TCP or LLRP) and stores them via a storage adapter interface.
 
 ## Features
 
@@ -10,6 +10,7 @@ RFID Event Collector is a Python 3 receiver service that ingests RFID events (te
 - LLRP adapter server for RO_ACCESS_REPORT messages (for readers such as Zebra FX7500)
 - Storage adapter interface for pluggable backends
 - SQLite adapter included as default backend
+- CSV file adapter included
 - SQL Server adapter implementation included
 - REST API adapter implementation included
 - Future adapter support prepared in the factory:
@@ -38,7 +39,7 @@ sql/
     schema.sql
 
 systemd/
-    rfid-receiver.service
+  zebra-rfid-parser.service
 
 config/
     config.json.example
@@ -81,13 +82,14 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
   },
   "storage": {
     "type": "sqlite",
-    "database_path": "/var/lib/rfid-event-collector/rfid_events.db",
-    "schema_path": "/opt/rfid-event-collector/sql/schema.sql",
+    "database_path": "/var/lib/zebra-rfid-parser/rfid_events.db",
+    "schema_path": "/opt/zebra-rfid-parser/sql/schema.sql",
+    "csv_path": "/var/lib/zebra-rfid-parser/rfid_events.csv",
     "endpoint_url": "https://example.local/rfid/events",
     "timeout_seconds": 5.0,
     "method": "POST",
     "headers": {
-      "X-Source": "rfid-event-collector"
+      "X-Source": "zebra-rfid-parser"
     },
     "bearer_token": "",
     "payload_key": "event"
@@ -117,8 +119,13 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
 `storage.type` values:
 
 - `sqlite`: writes events to local SQLite
+- `csv`: appends events to a local CSV file (`storage.csv_path`)
 - `sqlserver`: writes events to SQL Server via ODBC (`pyodbc`)
 - `rest_api`: posts each event as JSON to `storage.endpoint_url`
+
+When `storage.type` is `csv`, configure:
+
+- `csv_path`: destination CSV file path
 
 When `storage.type` is `sqlserver`, configure either:
 
@@ -277,13 +284,13 @@ sudo ./install.sh
 Check service status:
 
 ```bash
-sudo systemctl status rfid-receiver.service
+sudo systemctl status zebra-rfid-parser.service
 ```
 
 View logs:
 
 ```bash
-journalctl -u rfid-receiver.service -f
+journalctl -u zebra-rfid-parser.service -f
 ```
 
 ## Uninstall

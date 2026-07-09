@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="rfid-event-collector"
+APP_NAME="zebra-rfid-parser"
 APP_DIR="/opt/${APP_NAME}"
 CONFIG_DIR="/etc/${APP_NAME}"
 DATA_DIR="/var/lib/${APP_NAME}"
-SERVICE_NAME="rfid-receiver.service"
+SERVICE_NAME="zebra-rfid-parser.service"
 SERVICE_TARGET="/etc/systemd/system/${SERVICE_NAME}"
 USER_NAME="rfidcollector"
 

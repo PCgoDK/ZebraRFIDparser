@@ -29,8 +29,9 @@
   },
   "storage": {
     "type": "sqlite",
-    "database_path": "/var/lib/rfid-event-collector/rfid_events.db",
-    "schema_path": "/opt/rfid-event-collector/sql/schema.sql",
+    "database_path": "/var/lib/zebra-rfid-parser/rfid_events.db",
+    "schema_path": "/opt/zebra-rfid-parser/sql/schema.sql",
+    "csv_path": "/var/lib/zebra-rfid-parser/rfid_events.csv",
     "connection_string": "",
     "server": "localhost,1433",
     "database": "RFIDEvents",
@@ -45,7 +46,7 @@
     "timeout_seconds": 5.0,
     "method": "POST",
     "headers": {
-      "X-Source": "rfid-event-collector"
+      "X-Source": "zebra-rfid-parser"
     },
     "bearer_token": "",
     "payload_key": "event"

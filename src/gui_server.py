@@ -77,7 +77,7 @@ def _render_page(
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RFID Event Collector</title>
+<title>Zebra RFID Parser</title>
 <style>
 body {{ font-family: Segoe UI, sans-serif; margin: 18px; background: #f8f8f8; color: #222; }}
 .card {{ background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 14px; margin-bottom: 14px; }}
@@ -99,7 +99,7 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 </style>
 </head>
 <body>
-<h1>RFID Event Collector GUI</h1>
+<h1>Zebra RFID Parser GUI</h1>
 {f'<p class="msg">{html.escape(message)}</p>' if message else ''}
 {restart_banner}
 
@@ -135,12 +135,16 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 <label>Storage type</label>
 <select name="storage_type">
     <option value="sqlite" {'selected' if storage_cfg.get('type') == 'sqlite' else ''}>SQLite</option>
+    <option value="csv" {'selected' if storage_cfg.get('type') == 'csv' else ''}>CSV file</option>
     <option value="sqlserver" {'selected' if storage_cfg.get('type') == 'sqlserver' else ''}>SQL Server</option>
     <option value="postgresql" {'selected' if storage_cfg.get('type') == 'postgresql' else ''}>PostgreSQL (planned)</option>
     <option value="mysql" {'selected' if storage_cfg.get('type') == 'mysql' else ''}>MySQL (planned)</option>
     <option value="rest_api" {'selected' if storage_cfg.get('type') == 'rest_api' else ''}>REST API</option>
     <option value="mqtt" {'selected' if storage_cfg.get('type') == 'mqtt' else ''}>MQTT (planned)</option>
 </select>
+
+<label>CSV file path</label>
+<input name="csv_path" value="{html.escape(str(storage_cfg.get('csv_path', './data/rfid_events.csv')))}"/>
 
 <label>SQL Server connection string</label>
 <input name="sqlserver_connection_string" value="{html.escape(str(storage_cfg.get('connection_string', '')))}"/>
@@ -348,6 +352,7 @@ class _GUIHandler(BaseHTTPRequestHandler):
             parser_message = "Saved with parser alias warning"
 
         storage_cfg["type"] = str(form.get("storage_type", [storage_cfg.get("type", "sqlite")])[0]).lower()
+        storage_cfg["csv_path"] = str(form.get("csv_path", [storage_cfg.get("csv_path", "./data/rfid_events.csv")])[0])
         storage_cfg["connection_string"] = str(
             form.get("sqlserver_connection_string", [storage_cfg.get("connection_string", "")])[0]
         )

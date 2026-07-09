@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from csv_adapter import CSVAdapter
 from rest_api_adapter import RESTAPIAdapter
 from sqlserver_adapter import SQLServerAdapter
 from sqlite_adapter import SQLiteAdapter
@@ -15,6 +16,10 @@ def create_storage_adapter(storage_config: Dict[str, Any]) -> StorageAdapter:
         database_path = storage_config.get("database_path", "./data/rfid_events.db")
         schema_path = storage_config.get("schema_path", "./sql/schema.sql")
         return SQLiteAdapter(database_path=database_path, schema_path=schema_path)
+
+    if adapter_type == "csv":
+        file_path = str(storage_config.get("csv_path", "./data/rfid_events.csv"))
+        return CSVAdapter(file_path=file_path)
 
     if adapter_type == "sqlserver":
         return SQLServerAdapter(
