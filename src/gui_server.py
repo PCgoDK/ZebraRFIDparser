@@ -350,7 +350,7 @@ function closeCsvFolderPicker() {{
 
 async function csvPickerDocuments() {{
     await loadCsvFolders(CSV_DEFAULT_DIR);
-}
+}}
 
 async function csvPickerUp() {{
     const current = csvPickerState.current || CSV_DEFAULT_DIR;
