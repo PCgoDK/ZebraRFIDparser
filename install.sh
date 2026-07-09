@@ -39,6 +39,7 @@ if [[ ! -f "${CONFIG_DIR}/config.json" ]]; then
 fi
 
 chown -R "${USER_NAME}:${USER_NAME}" "${APP_DIR}" "${DATA_DIR}"
+chown "root:${USER_NAME}" "${CONFIG_DIR}/config.json"
 chmod 750 "${APP_DIR}" "${DATA_DIR}"
 chmod 640 "${CONFIG_DIR}/config.json"
 
