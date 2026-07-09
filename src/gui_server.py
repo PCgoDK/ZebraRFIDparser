@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import json
 import logging
+import os
 import threading
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -319,6 +320,7 @@ async function loadCsvFolders(path) {{
     document.getElementById('csv-picker-current').value = csvPickerState.current;
     const select = document.getElementById('csv-picker-list');
     select.innerHTML = '';
+    const deniedCount = Number(d.denied_count || 0);
     const children = d.children || [];
     if (children.length === 0) {{
         const empty = document.createElement('option');
@@ -326,7 +328,9 @@ async function loadCsvFolders(path) {{
         empty.textContent = '(ingen undermapper)';
         empty.disabled = true;
         select.appendChild(empty);
-        status.textContent = 'Ingen undermapper i den valgte mappe.';
+        status.textContent = deniedCount > 0
+            ? `Ingen tilgaengelige undermapper. ${{deniedCount}} mappe(r) blev skjult pga manglende adgang.`
+            : 'Ingen undermapper i den valgte mappe.';
         return;
     }}
     children.forEach(name => {{
@@ -335,7 +339,9 @@ async function loadCsvFolders(path) {{
         opt.textContent = name;
         select.appendChild(opt);
     }});
-    status.textContent = '';
+    status.textContent = deniedCount > 0
+        ? `${{deniedCount}} mappe(r) er skjult pga manglende adgang.`
+        : '';
 }}
 
 async function openCsvFolderPicker() {{
@@ -420,7 +426,19 @@ class _GUIHandler(BaseHTTPRequestHandler):
             current = start_path.resolve()
             if not current.exists() or not current.is_dir():
                 raise ValueError("Path is not a directory")
-            children = sorted([item.name for item in current.iterdir() if item.is_dir()])
+            children = []
+            denied_count = 0
+            for item in current.iterdir():
+                try:
+                    if not item.is_dir():
+                        continue
+                    if os.access(item, os.R_OK | os.X_OK):
+                        children.append(item.name)
+                    else:
+                        denied_count += 1
+                except PermissionError:
+                    denied_count += 1
+            children.sort()
         except Exception as exc:
             payload = json.dumps({"ok": False, "error": str(exc)}).encode("utf-8")
             self.send_response(HTTPStatus.BAD_REQUEST)
@@ -436,6 +454,7 @@ class _GUIHandler(BaseHTTPRequestHandler):
                 "current": str(current),
                 "parent": str(current.parent) if current != current.parent else None,
                 "children": children,
+                "denied_count": denied_count,
             }
         ).encode("utf-8")
         self.send_response(HTTPStatus.OK)
