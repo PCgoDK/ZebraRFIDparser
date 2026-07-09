@@ -8,6 +8,7 @@ DATA_DIR="/var/lib/${APP_NAME}"
 SERVICE_NAME="zebra-rfid-parser.service"
 SERVICE_TARGET="/etc/systemd/system/${SERVICE_NAME}"
 USER_NAME="rfidcollector"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "Please run as root (sudo)."
@@ -25,14 +26,16 @@ fi
 
 mkdir -p "${APP_DIR}" "${CONFIG_DIR}" "${DATA_DIR}"
 
-cp -r src sql "${APP_DIR}/"
-cp systemd/${SERVICE_NAME} "${SERVICE_TARGET}"
+if [[ "${SCRIPT_DIR}" != "${APP_DIR}" ]]; then
+  cp -r "${SCRIPT_DIR}/src" "${SCRIPT_DIR}/sql" "${APP_DIR}/"
+fi
+cp "${SCRIPT_DIR}/systemd/${SERVICE_NAME}" "${SERVICE_TARGET}"
 
 python3 -m venv "${APP_DIR}/venv"
 "${APP_DIR}/venv/bin/python" -m pip install --upgrade pip >/dev/null
 
 if [[ ! -f "${CONFIG_DIR}/config.json" ]]; then
-  cp config/config.json.example "${CONFIG_DIR}/config.json"
+  cp "${SCRIPT_DIR}/config/config.json.example" "${CONFIG_DIR}/config.json"
 fi
 
 chown -R "${USER_NAME}:${USER_NAME}" "${APP_DIR}" "${DATA_DIR}"
