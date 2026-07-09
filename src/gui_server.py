@@ -98,9 +98,11 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 .secondary {{ background: #6b7280; }}
 .row {{ display: flex; gap: 8px; align-items: center; }}
 .row input {{ flex: 1 1 auto; }}
-.picker {{ margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fafafa; }}
+.picker-modal {{ position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }}
+.picker-card {{ width: min(760px, 96vw); max-height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 10px; padding: 12px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }}
 .picker-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }}
 .picker select {{ min-height: 130px; }}
+.picker-status {{ margin-top: 8px; font-size: 0.9rem; color: #666; }}
 </style>
 </head>
 <body>
@@ -153,17 +155,21 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 <input id="csv-path" name="csv_path" value="{html.escape(str(storage_cfg.get('csv_path', '/home/pcgo/Documents/data.csv')))}"/>
 <button type="button" onclick="openCsvFolderPicker()">Vaelg mappe</button>
 </div>
-<div id="csv-picker" class="picker" style="display:none;">
+<div id="csv-picker" class="picker-modal" style="display:none;">
+<div class="picker-card picker">
 <div class="subtle">Vaelg mappe paa serveren. Filnavnet saettes automatisk til <code>data.csv</code>.</div>
 <label>Aktuel mappe</label>
 <input id="csv-picker-current" readonly/>
 <label>Undermapper</label>
 <select id="csv-picker-list" size="8"></select>
+<div id="csv-picker-status" class="picker-status"></div>
 <div class="picker-actions">
+<button type="button" onclick="csvPickerDocuments()">Dokumenter</button>
 <button type="button" onclick="csvPickerUp()">Op</button>
 <button type="button" onclick="csvPickerInto()">Gaa ind</button>
 <button type="button" onclick="applyCsvFolder()">Brug mappe</button>
 <button type="button" class="secondary" onclick="closeCsvFolderPicker()">Luk</button>
+</div>
 </div>
 </div>
 
@@ -279,12 +285,13 @@ async function runPreview() {{
     document.getElementById('preview-output').value = JSON.stringify(d, null, 2);
 }}
 
-let csvPickerState = {{ current: '' }};
+const CSV_DEFAULT_DIR = '/home/pcgo/Documents';
+let csvPickerState = {{ current: CSV_DEFAULT_DIR }};
 
 function csvPathDir(path) {{
     const value = (path || '').trim();
     const slash = value.lastIndexOf('/');
-    if (slash <= 0) return '/home/pcgo/Documents';
+    if (slash <= 0) return CSV_DEFAULT_DIR;
     return value.slice(0, slash);
 }}
 
@@ -295,19 +302,40 @@ function csvJoin(base, name) {{
 
 async function loadCsvFolders(path) {{
     const q = encodeURIComponent(path || '');
+    const status = document.getElementById('csv-picker-status');
+    status.textContent = 'Indlaeser mapper...';
     const r = await fetch('/api/list-directories?path=' + q);
-    if (!r.ok) return;
+    if (!r.ok) {{
+        let message = 'Kunne ikke indlaese mapper.';
+        try {{
+            const errorBody = await r.json();
+            if (errorBody && errorBody.error) message = String(errorBody.error);
+        }} catch (e) {{}}
+        status.textContent = message;
+        return;
+    }}
     const d = await r.json();
-    csvPickerState.current = d.current || '/home/pcgo/Documents';
+    csvPickerState.current = d.current || CSV_DEFAULT_DIR;
     document.getElementById('csv-picker-current').value = csvPickerState.current;
     const select = document.getElementById('csv-picker-list');
     select.innerHTML = '';
-    (d.children || []).forEach(name => {{
+    const children = d.children || [];
+    if (children.length === 0) {{
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = '(ingen undermapper)';
+        empty.disabled = true;
+        select.appendChild(empty);
+        status.textContent = 'Ingen undermapper i den valgte mappe.';
+        return;
+    }}
+    children.forEach(name => {{
         const opt = document.createElement('option');
         opt.value = name;
         opt.textContent = name;
         select.appendChild(opt);
     }});
+    status.textContent = '';
 }}
 
 async function openCsvFolderPicker() {{
@@ -320,8 +348,12 @@ function closeCsvFolderPicker() {{
     document.getElementById('csv-picker').style.display = 'none';
 }}
 
+async function csvPickerDocuments() {{
+    await loadCsvFolders(CSV_DEFAULT_DIR);
+}
+
 async function csvPickerUp() {{
-    const current = csvPickerState.current || '/home/pcgo/Documents';
+    const current = csvPickerState.current || CSV_DEFAULT_DIR;
     const idx = current.lastIndexOf('/');
     const parent = idx <= 0 ? '/' : current.slice(0, idx);
     await loadCsvFolders(parent);
