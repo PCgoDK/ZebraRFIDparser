@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict
 
 from csv_adapter import CSVAdapter
@@ -11,6 +12,7 @@ from storage_adapter import StorageAdapter
 
 def create_storage_adapter(storage_config: Dict[str, Any]) -> StorageAdapter:
     adapter_type = str(storage_config.get("type", "sqlite")).strip().lower()
+    default_csv_path = str(Path.home() / "Documents" / "data.csv")
 
     if adapter_type == "sqlite":
         database_path = storage_config.get("database_path", "./data/rfid_events.db")
@@ -18,7 +20,7 @@ def create_storage_adapter(storage_config: Dict[str, Any]) -> StorageAdapter:
         return SQLiteAdapter(database_path=database_path, schema_path=schema_path)
 
     if adapter_type == "csv":
-        file_path = str(storage_config.get("csv_path", "./data/rfid_events.csv"))
+        file_path = str(storage_config.get("csv_path", default_csv_path))
         return CSVAdapter(file_path=file_path)
 
     if adapter_type == "sqlserver":

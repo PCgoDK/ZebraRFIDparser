@@ -6,7 +6,7 @@
     "port": 8088
   },
   "input": {
-    "protocol": "llrp_client",
+    "protocol": "llrp_server",
     "host": "0.0.0.0",
     "port": 9002,
     "reader_host": "192.168.1.100",
@@ -31,7 +31,7 @@
     "type": "sqlite",
     "database_path": "/var/lib/zebra-rfid-parser/rfid_events.db",
     "schema_path": "/opt/zebra-rfid-parser/sql/schema.sql",
-    "csv_path": "/var/lib/zebra-rfid-parser/rfid_events.csv",
+    "csv_path": "/home/pcgo/Documents/data.csv",
     "connection_string": "",
     "server": "localhost,1433",
     "database": "RFIDEvents",

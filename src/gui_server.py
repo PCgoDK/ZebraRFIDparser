@@ -60,7 +60,7 @@ def _render_page(
             "</tr>"
         )
     latest_rows = "\n".join(rows)
-    selected_protocol = str(input_cfg.get("protocol", "text_tcp"))
+    selected_protocol = str(input_cfg.get("protocol", "llrp_server"))
     restart_banner = (
         "<div class=\"restart-box\"><strong>Konfigurationen er gemt.</strong>"
         "<div class=\"subtle\">Vil du genstarte tjenesten nu, så ændringerne træder i kraft med det samme?</div>"
@@ -96,6 +96,11 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 .restart-actions {{ display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }}
 .restart-actions form {{ margin: 0; }}
 .secondary {{ background: #6b7280; }}
+.row {{ display: flex; gap: 8px; align-items: center; }}
+.row input {{ flex: 1 1 auto; }}
+.picker {{ margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fafafa; }}
+.picker-actions {{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }}
+.picker select {{ min-height: 130px; }}
 </style>
 </head>
 <body>
@@ -144,7 +149,23 @@ th, td {{ border-bottom: 1px solid #ddd; padding: 7px; text-align: left; }}
 </select>
 
 <label>CSV file path</label>
-<input name="csv_path" value="{html.escape(str(storage_cfg.get('csv_path', './data/rfid_events.csv')))}"/>
+<div class="row">
+<input id="csv-path" name="csv_path" value="{html.escape(str(storage_cfg.get('csv_path', '/home/pcgo/Documents/data.csv')))}"/>
+<button type="button" onclick="openCsvFolderPicker()">Vaelg mappe</button>
+</div>
+<div id="csv-picker" class="picker" style="display:none;">
+<div class="subtle">Vaelg mappe paa serveren. Filnavnet saettes automatisk til <code>data.csv</code>.</div>
+<label>Aktuel mappe</label>
+<input id="csv-picker-current" readonly/>
+<label>Undermapper</label>
+<select id="csv-picker-list" size="8"></select>
+<div class="picker-actions">
+<button type="button" onclick="csvPickerUp()">Op</button>
+<button type="button" onclick="csvPickerInto()">Gaa ind</button>
+<button type="button" onclick="applyCsvFolder()">Brug mappe</button>
+<button type="button" class="secondary" onclick="closeCsvFolderPicker()">Luk</button>
+</div>
+</div>
 
 <label>SQL Server connection string</label>
 <input name="sqlserver_connection_string" value="{html.escape(str(storage_cfg.get('connection_string', '')))}"/>
@@ -258,6 +279,66 @@ async function runPreview() {{
     document.getElementById('preview-output').value = JSON.stringify(d, null, 2);
 }}
 
+let csvPickerState = {{ current: '' }};
+
+function csvPathDir(path) {{
+    const value = (path || '').trim();
+    const slash = value.lastIndexOf('/');
+    if (slash <= 0) return '/home/pcgo/Documents';
+    return value.slice(0, slash);
+}}
+
+function csvJoin(base, name) {{
+    if (!base || base === '/') return '/' + name;
+    return base.replace(/\/$/, '') + '/' + name;
+}}
+
+async function loadCsvFolders(path) {{
+    const q = encodeURIComponent(path || '');
+    const r = await fetch('/api/list-directories?path=' + q);
+    if (!r.ok) return;
+    const d = await r.json();
+    csvPickerState.current = d.current || '/home/pcgo/Documents';
+    document.getElementById('csv-picker-current').value = csvPickerState.current;
+    const select = document.getElementById('csv-picker-list');
+    select.innerHTML = '';
+    (d.children || []).forEach(name => {{
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    }});
+}}
+
+async function openCsvFolderPicker() {{
+    document.getElementById('csv-picker').style.display = 'block';
+    const csvInput = document.getElementById('csv-path');
+    await loadCsvFolders(csvPathDir(csvInput.value));
+}}
+
+function closeCsvFolderPicker() {{
+    document.getElementById('csv-picker').style.display = 'none';
+}}
+
+async function csvPickerUp() {{
+    const current = csvPickerState.current || '/home/pcgo/Documents';
+    const idx = current.lastIndexOf('/');
+    const parent = idx <= 0 ? '/' : current.slice(0, idx);
+    await loadCsvFolders(parent);
+}}
+
+async function csvPickerInto() {{
+    const select = document.getElementById('csv-picker-list');
+    if (!select.value) return;
+    await loadCsvFolders(csvJoin(csvPickerState.current, select.value));
+}}
+
+function applyCsvFolder() {{
+    const csvInput = document.getElementById('csv-path');
+    csvInput.value = csvJoin(csvPickerState.current, 'data.csv');
+    closeCsvFolderPicker();
+}}
+
 updateProtocolVisibility();
 setInterval(refreshStatus, 5000);
 </script>
@@ -281,6 +362,10 @@ class _GUIHandler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
             return
 
+        if parsed.path == "/api/list-directories":
+            self._handle_list_directories(parsed)
+            return
+
         if parsed.path != "/":
             self.send_error(HTTPStatus.NOT_FOUND)
             return
@@ -290,6 +375,39 @@ class _GUIHandler(BaseHTTPRequestHandler):
         payload = page.encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def _handle_list_directories(self, parsed: Any) -> None:
+        query = parse_qs(parsed.query)
+        raw_path = str(query.get("path", [""])[0]).strip()
+        start_path = Path(raw_path).expanduser() if raw_path else (Path.home() / "Documents")
+
+        try:
+            current = start_path.resolve()
+            if not current.exists() or not current.is_dir():
+                raise ValueError("Path is not a directory")
+            children = sorted([item.name for item in current.iterdir() if item.is_dir()])
+        except Exception as exc:
+            payload = json.dumps({"ok": False, "error": str(exc)}).encode("utf-8")
+            self.send_response(HTTPStatus.BAD_REQUEST)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
+        payload = json.dumps(
+            {
+                "ok": True,
+                "current": str(current),
+                "parent": str(current.parent) if current != current.parent else None,
+                "children": children,
+            }
+        ).encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
@@ -326,7 +444,7 @@ class _GUIHandler(BaseHTTPRequestHandler):
         parser_cfg = config.setdefault("parser_setup", {})
         storage_cfg = config.setdefault("storage", {})
 
-        input_cfg["protocol"] = str(form.get("input_protocol", [input_cfg.get("protocol", "text_tcp")])[0])
+        input_cfg["protocol"] = str(form.get("input_protocol", [input_cfg.get("protocol", "llrp_server")])[0])
         input_cfg["host"] = str(form.get("input_host", [input_cfg.get("host", "0.0.0.0")])[0])
         input_cfg["port"] = int(str(form.get("input_port", [input_cfg.get("port", 9002)])[0]))
         input_cfg["reader_host"] = str(form.get("reader_host", [input_cfg.get("reader_host", "")])[0])
@@ -352,7 +470,7 @@ class _GUIHandler(BaseHTTPRequestHandler):
             parser_message = "Saved with parser alias warning"
 
         storage_cfg["type"] = str(form.get("storage_type", [storage_cfg.get("type", "sqlite")])[0]).lower()
-        storage_cfg["csv_path"] = str(form.get("csv_path", [storage_cfg.get("csv_path", "./data/rfid_events.csv")])[0])
+        storage_cfg["csv_path"] = str(form.get("csv_path", [storage_cfg.get("csv_path", "/home/pcgo/Documents/data.csv")])[0])
         storage_cfg["connection_string"] = str(
             form.get("sqlserver_connection_string", [storage_cfg.get("connection_string", "")])[0]
         )

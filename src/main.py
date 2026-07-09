@@ -97,7 +97,7 @@ def main() -> None:
     parser_config = config.get("parser_setup", {})
 
     input_config = config.get("input", {})
-    protocol = str(input_config.get("protocol", "text_tcp")).strip().lower()
+    protocol = str(input_config.get("protocol", "llrp_server")).strip().lower()
 
     # Backward compatibility for older config files.
     tcp_config = config.get("tcp_server", {})

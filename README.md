@@ -62,7 +62,7 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
     "port": 8088
   },
   "input": {
-    "protocol": "llrp_client",
+    "protocol": "llrp_server",
     "host": "0.0.0.0",
     "port": 9000,
     "reader_host": "192.168.1.100",
@@ -84,7 +84,7 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
     "type": "sqlite",
     "database_path": "/var/lib/zebra-rfid-parser/rfid_events.db",
     "schema_path": "/opt/zebra-rfid-parser/sql/schema.sql",
-    "csv_path": "/var/lib/zebra-rfid-parser/rfid_events.csv",
+    "csv_path": "/home/pcgo/Documents/data.csv",
     "endpoint_url": "https://example.local/rfid/events",
     "timeout_seconds": 5.0,
     "method": "POST",
@@ -158,7 +158,7 @@ When `storage.type` is `rest_api`, configure:
 
 - `text_tcp`: newline-delimited text events (JSON, key=value, or plain tag)
 - `llrp_client`: connects to the reader LLRP endpoint (default `reader_port: 5084`)
-- `llrp_server`: listens for inbound LLRP frames (legacy/integration mode)
+- `llrp_server`: listens for inbound LLRP frames (default)
 
 ## Supported Incoming Event Formats
 
