@@ -105,7 +105,7 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
 
 `gui` settings:
 
-- `gui.enabled`: starter GUI-serveren sammen med collector
+- `gui.enabled`: starter GUI-serveren sammen med parser-servicen
 - `gui.host`: bind-adresse for GUI
 - `gui.port`: port for GUI (default `8088`)
 
@@ -125,7 +125,7 @@ Copy `config/config.json.example` to your runtime config path and adjust as need
 
 When `storage.type` is `csv`, configure:
 
-- `csv_path`: destination CSV file path
+- `csv_path`: destination CSV file path (default `/home/pcgo/Documents/data.csv`)
 
 When `storage.type` is `sqlserver`, configure either:
 
@@ -158,7 +158,7 @@ When `storage.type` is `rest_api`, configure:
 
 - `text_tcp`: newline-delimited text events (JSON, key=value, or plain tag)
 - `llrp_client`: connects to the reader LLRP endpoint (default `reader_port: 5084`)
-- `llrp_server`: listens for inbound LLRP frames (default)
+- `llrp_server`: listens for inbound LLRP frames (default mode)
 
 ## Supported Incoming Event Formats
 
@@ -223,12 +223,26 @@ GUI bruges til:
 - Konfiguration af server-protokol, host/port og reader settings
 - Opsaetning af parser (required field, default type, key aliases)
 - Visning af aktuel status for seneste afsendere af data
+- Valg af mappe til CSV-output via knappen `Vaelg mappe` (saetter automatisk filnavn til `data.csv`)
+
+Bemark om mappevalg i browser:
+
+- GUI bruger en server-side mappebrowser, ikke en native OS-dialog
+- Browser-sikkerhed tillader ikke en rigtig server-filvaelger dialogboks
 
 Naar service er startet med `gui.enabled=true`, aabn:
 
 ```text
 http://127.0.0.1:8088
 ```
+
+Hvis du tilgaar enheden eksternt, brug SSH tunnel:
+
+```bash
+ssh -L 8088:127.0.0.1:8088 pcgo@<enhed-ip>
+```
+
+og aabn derefter `http://127.0.0.1:8088` lokalt.
 
 Status-panelet viser blandt andet:
 
@@ -265,6 +279,8 @@ Send a test event:
 ```bash
 echo '{"tag_id":"E2000017221101441890ABCD","reader_id":"R1"}' | nc 127.0.0.1 9000
 ```
+
+Note: Kommandoen ovenfor gaelder for `text_tcp`. Standard er `llrp_server`.
 
 ## Testing
 
