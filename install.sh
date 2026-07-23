@@ -40,6 +40,8 @@ fi
 
 chown -R "${USER_NAME}:${USER_NAME}" "${APP_DIR}" "${DATA_DIR}"
 chown "root:${USER_NAME}" "${CONFIG_DIR}/config.json"
+# Normalize permissions recursively so service user can always read app files.
+chmod -R u+rwX,g+rX,o-rwx "${APP_DIR}"
 chmod 750 "${APP_DIR}" "${DATA_DIR}"
 chmod 640 "${CONFIG_DIR}/config.json"
 

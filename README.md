@@ -309,6 +309,28 @@ View logs:
 journalctl -u zebra-rfid-parser.service -f
 ```
 
+Post-install verification:
+
+```bash
+sudo systemctl is-enabled zebra-rfid-parser.service
+sudo systemctl is-active zebra-rfid-parser.service
+ss -ltn | grep 8088
+curl -s -o /tmp/gui.html -w "%{http_code}\n" http://127.0.0.1:8088/
+```
+
+Note: `curl -I` (HEAD) can return `501 Unsupported method` on the built-in GUI handler.
+Use a normal GET request for verification as shown above.
+
+If the service fails with missing config (`/etc/zebra-rfid-parser/config.json`):
+
+```bash
+sudo mkdir -p /etc/zebra-rfid-parser
+sudo cp config/config.json.example /etc/zebra-rfid-parser/config.json
+sudo chown root:rfidcollector /etc/zebra-rfid-parser/config.json
+sudo chmod 640 /etc/zebra-rfid-parser/config.json
+sudo systemctl restart zebra-rfid-parser.service
+```
+
 ## Uninstall
 
 ```bash
